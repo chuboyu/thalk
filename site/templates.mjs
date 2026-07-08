@@ -12,21 +12,34 @@ export function fmtDate(d) {
   return d.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-// Subscribe widget. Two variants sharing one form and one script (in base):
-//  - inline: input row on every page; remembers the subscribed email in
-//    localStorage and collapses to "<email> already subscribed ✓" (click to reopen).
+// Subscribe widget. Three variants sharing one form and one script (in base):
+//  - inline: input row that flows with the page; remembers the subscribed email
+//    in localStorage and collapses to "<email> already subscribed ✓" (click to reopen).
+//  - card: same behavior as inline, but framed as a standalone bordered card
+//    with its own title — for placements that shouldn't align with running text.
 //  - nav: a compact button in the header that always expands to a fresh input.
-function subscribeWidget(variant) {
+// All display text is overridable per instance via the second argument.
+export function subscribeWidget(variant = 'inline', text = {}) {
+  const t = {
+    lead: 'get new posts by email',
+    title: 'subscribe',
+    button: 'subscribe',
+    cta: 'subscribe',
+    placeholder: 'you@example.com',
+    ...text
+  };
   const form = `<form class="sub-form" hidden>
     <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="sub-hp">
-    <input type="email" name="email" required placeholder="you@example.com" aria-label="email">
-    <button type="submit">subscribe</button>
+    <input type="email" name="email" required placeholder="${esc(t.placeholder)}" aria-label="email">
+    <button type="submit">${esc(t.button)}</button>
   </form>
   <p class="sub-status" title="click to change" hidden></p>
   <p class="sub-error" role="alert" hidden></p>`;
-  return variant === 'nav'
-    ? `<div class="sub sub-nav" data-variant="nav"><button type="button" class="sub-cta">subscribe</button>${form}</div>`
-    : `<div class="sub sub-inline" data-variant="inline"><p class="sub-lead">get new posts by email</p>${form}</div>`;
+  if (variant === 'nav')
+    return `<div class="sub sub-nav" data-variant="nav"><button type="button" class="sub-cta">${esc(t.cta)}</button>${form}</div>`;
+  if (variant === 'card')
+    return `<div class="sub sub-card" data-variant="card"><p class="sub-title">${esc(t.title)}</p><p class="sub-lead">${esc(t.lead)}</p>${form}</div>`;
+  return `<div class="sub sub-inline" data-variant="inline">${form}</div>`;
 }
 
 const widgetScript = `<script>
@@ -40,6 +53,7 @@ const widgetScript = `<script>
     var cta = w.querySelector('.sub-cta');
     var email = form.querySelector('[name=email]');
     var btn = form.querySelector('button[type=submit]');
+    var label = btn.textContent;
 
     function open(prefill) {
       if (cta) cta.hidden = true;
@@ -86,7 +100,7 @@ const widgetScript = `<script>
         error.hidden = false;
       }).finally(function () {
         btn.disabled = false;
-        btn.textContent = 'subscribe';
+        btn.textContent = label;
       });
     });
   });
@@ -118,7 +132,6 @@ export function base({ title, description, path, content }) {
 <main>
 ${content}
 </main>
-${subscribeWidget('inline')}
 <footer>
   <p>© ${new Date().getFullYear()} ${esc(site.author)} · <a href="/rss.xml">rss</a></p>
 </footer>
@@ -142,7 +155,13 @@ export function index(posts) {
     title: site.title,
     description: site.description,
     path: '/',
-    content: `<ul class="posts">\n${items}\n</ul>`
+    content: `<ul class="posts">\n${items}\n</ul> 
+      ${subscribeWidget('card', 
+        {
+          title:'Keep in touch', 
+          lead:"If you like my thoughts and works, join the mailing list for the latest posts!"
+        }
+      )}`
   });
 }
 
@@ -155,6 +174,7 @@ export function post(p) {
 <h1>${esc(p.title)}</h1>
 <p class="meta"><time datetime="${p.date.toISOString().slice(0, 10)}">${fmtDate(p.date)}</time></p>
 ${p.html}
+${subscribeWidget('inline')}
 </article>`
   });
 }

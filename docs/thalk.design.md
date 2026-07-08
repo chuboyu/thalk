@@ -92,10 +92,13 @@ One small Firebase project (`thalk`) with 2nd-gen Cloud Functions (these run on 
 
 #### The subscribe widget
 
-Subscribing is not a page; it's one self-contained component (a template function, ~40 lines of shared vanilla JS in the base layout, a few CSS rules) rendered in two variants:
+Subscribing is not a page; it's one self-contained component (a template function, ~40 lines of shared vanilla JS in the base layout, a few CSS rules) rendered in three variants:
 
 - **Inline variant** — embedded on every page, above the footer (and therefore directly under each post). A single compact row: email input + subscribe button. Submitting walks `idle → submitting → submitted`, ending in a quiet "subscribed — thank you" confirmation in place of the form.
+- **Card variant** — the inline widget framed as a standalone bordered card with its own title, visually detached from running text. Same behavior and memory as inline; meant for flexible placement inside page layouts where the widget shouldn't read as part of the prose.
 - **Nav-button variant** — replaces the old "subscribe" nav tab in the top right. Renders as a small button; clicking it expands it, in place, into the same input + submit row (the `phuze.edato.me` "request to join" pattern). From there it behaves identically to the inline variant.
+
+All display text is per-instance customizable: `subscribeWidget(variant, text)` accepts overrides for the lead line, card title, submit-button label, nav-button (cta) label, and input placeholder, with sensible defaults. State messages ("already subscribed ✓", "subscribed ✓ — thank you", the error line) stay uniform across instances — they're behavior, not placement copy.
 
 **Browser memory.** On successful submission the widget stores the subscribed email under `thalk.subscribed` in `localStorage` — the longest-lived client-side storage available without accounts or cookies (it survives until the user clears site data). The two variants treat it differently, on purpose:
 
