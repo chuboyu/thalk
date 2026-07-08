@@ -70,8 +70,8 @@ The site includes:
 
 - `/` — post list, `/posts/<slug>/` — posts, `/about/`
 - `/rss.xml` — full-content RSS feed. This is also the machine interface: syndication (phase 3) and any future agent tooling read the feed rather than scraping HTML.
-- `/subscribe/` — email signup form
 - `/support/` — support page (see §4)
+- there is **no** `/subscribe/` page — subscribing happens through an inline widget embedded on every page (see §4).
 
 ### 3. Hosting & publishing — GitHub Pages + Actions
 
@@ -89,6 +89,20 @@ One small Firebase project (`thalk`) with 2nd-gen Cloud Functions (these run on 
 - `POST /support-lead` — `{ email, note? }` → writes to `support_leads` collection.
 
 **The support page** is intentionally a lead-capture, not a payment system: it explains that funding options are coming, and offers "leave your email and I'll tell you when it's ready." That satisfies requirement 3 today without integrating Stripe/GitHub Sponsors prematurely — and the leads list tells me when demand justifies building it. When payments do arrive, the page grows links (GitHub Sponsors / Buy Me a Coffee / Stripe Payment Link — all zero-backend options) and the lead form emails those people.
+
+#### The subscribe widget
+
+Subscribing is not a page; it's one self-contained component (a template function, ~40 lines of shared vanilla JS in the base layout, a few CSS rules) rendered in two variants:
+
+- **Inline variant** — embedded on every page, above the footer (and therefore directly under each post). A single compact row: email input + subscribe button. Submitting walks `idle → submitting → submitted`, ending in a quiet "subscribed — thank you" confirmation in place of the form.
+- **Nav-button variant** — replaces the old "subscribe" nav tab in the top right. Renders as a small button; clicking it expands it, in place, into the same input + submit row (the `phuze.edato.me` "request to join" pattern). From there it behaves identically to the inline variant.
+
+**Browser memory.** On successful submission the widget stores the subscribed email under `thalk.subscribed` in `localStorage` — the longest-lived client-side storage available without accounts or cookies (it survives until the user clears site data). The two variants treat it differently, on purpose:
+
+- Inline variants check it at render: if set, they show a one-line "`<email>` already subscribed ✓" instead of input fields — repeat visitors aren't nagged, and they can see *which* address is subscribed. Clicking that line reveals the input again, prefilled with the stored email, allowing confirmation and re-submission (or correction) if necessary.
+- The nav-button variant always expands to a fresh, empty input when clicked, regardless of the stored state — the escape hatch for typo'd emails or subscribing a second address.
+
+The support page's lead form stays a separate, plain form (different dataset, has a note field); the subscribe widget appears there too like on every page.
 
 Guardrails, kept minimal:
 
@@ -129,9 +143,8 @@ thalk/
 │   ├── content/
 │   │   ├── posts/             # ★ the actual writing, plain .md
 │   │   ├── about.md
-│   │   ├── subscribe.md
 │   │   └── support.md
-│   ├── templates.mjs          # HTML as template-literal functions
+│   ├── templates.mjs          # HTML as template-literal functions, incl. subscribe widget
 │   ├── static/                # style.css, images, favicon
 │   └── build.mjs              # ★ the whole "SSG", ~200 lines
 ├── functions/                 # Firebase Functions (subscribe, support-lead, unsubscribe)
@@ -163,7 +176,7 @@ Firebase App Hosting was considered and **not used**: it targets server-rendered
 
 | Phase | Delivers | Requirements covered |
 |---|---|---|
-| **1 — Publish** | `build.mjs` + templates, RSS, deploy workflow, custom domain, About + Support (lead form) + Subscribe pages, Firebase functions + Firestore | 1, 2 (page + list capture), 3, 4 |
+| **1 — Publish** | `build.mjs` + templates, RSS, deploy workflow, custom domain, About + Support (lead form) pages, subscribe widget on every page, Firebase functions + Firestore | 1, 2 (page + list capture), 3, 4 |
 | **2 — Reach** | Newsletter sending (Resend), unsubscribe, optional double opt-in, subscriber export/backup script | 2 (complete), 5 (mailing list) |
 | **3 — Syndicate** | `syndicate` front matter → auto-post to X / Threads / Facebook | 5 (complete) |
 | **4 — Agents** | Agent-drafted, PR-approved platform-specific release copy | 6 |

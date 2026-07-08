@@ -9,6 +9,6 @@ syndicate: []
 
 This is **thalk** — my personal channel for thoughts, writing, and works in progress.
 
-Everything here starts as a markdown file in a git repository. A small script I own turns it into the page you're reading; no CMS, no framework, no platform in between. If you want to follow along, there's an [RSS feed](/rss.xml) or a [mailing list](/subscribe/).
+Everything here starts as a markdown file in a git repository. A small script I own turns it into the page you're reading; no CMS, no framework, no platform in between. If you want to follow along, there's an [RSS feed](/rss.xml) or the mailing list — the subscribe box at the bottom of every page.
 
 More soon.

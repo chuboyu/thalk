@@ -65,6 +65,43 @@ footer {
   font-family: ui-sans-serif, system-ui, sans-serif;
 }
 footer a { color: var(--muted); }
+/* subscribe widget */
+.sub { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.9rem; }
+.sub-inline { margin-top: 3.5rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+.sub-lead { margin: 0 0 0.5rem; color: var(--muted); }
+.sub-form { display: flex; gap: 0.5rem; align-items: center; }
+.sub-form input[type='email'] {
+  flex: 1;
+  max-width: 18rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.sub-form button, .sub-cta {
+  padding: 0.45rem 1rem;
+  font: inherit;
+  color: var(--bg);
+  background: var(--fg);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sub-form button:disabled { opacity: 0.5; cursor: default; }
+.sub-hp { position: absolute; left: -9999px; }
+.sub-status { margin: 0; color: var(--muted); cursor: pointer; }
+.sub-status:hover { color: var(--fg); }
+.sub-error { margin: 0.3rem 0 0; color: #c23b3b; }
+.sub-nav { display: flex; align-items: center; }
+.sub-nav .sub-cta { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+.sub-nav .sub-form input[type='email'] { width: 11rem; flex: none; padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+.sub-nav .sub-form button { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+.sub-nav .sub-status, .sub-nav .sub-error { font-size: 0.85rem; margin: 0 0 0 0.5rem; }
+
+/* support lead form */
 .signup { margin-top: 2rem; display: grid; gap: 0.75rem; font-family: ui-sans-serif, system-ui, sans-serif; }
 .signup label { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
 .signup input[type='email'], .signup textarea {
