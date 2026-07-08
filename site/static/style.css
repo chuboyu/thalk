@@ -1,0 +1,89 @@
+:root {
+  --bg: #fdfdfc;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --accent: #0b5fff;
+  --rule: #e5e5e0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --fg: #e8e6e3;
+    --muted: #9a988f;
+    --accent: #7aa2ff;
+    --rule: #2c2f36;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+  max-width: 42rem;
+  background: var(--bg);
+  color: var(--fg);
+  font: 1.05rem/1.65 Charter, Georgia, 'Times New Roman', serif;
+}
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+.brand { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--fg); }
+nav { display: flex; gap: 1rem; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--fg); }
+a { color: var(--accent); }
+h1, h2, h3 { line-height: 1.25; font-family: ui-sans-serif, system-ui, sans-serif; }
+h1 { font-size: 1.7rem; margin: 0 0 0.25rem; }
+.meta, time { color: var(--muted); font-size: 0.9rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+.posts { list-style: none; padding: 0; }
+.posts li { margin-bottom: 1.75rem; }
+.posts time { display: block; }
+.posts a { font-size: 1.15rem; font-weight: 600; text-decoration: none; }
+.posts p { margin: 0.25rem 0 0; color: var(--muted); }
+article img { max-width: 100%; }
+pre {
+  padding: 0.9rem;
+  overflow-x: auto;
+  background: rgba(125, 125, 125, 0.09);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+blockquote { margin: 0; padding-left: 1rem; border-left: 3px solid var(--rule); color: var(--muted); }
+footer {
+  margin-top: 4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+footer a { color: var(--muted); }
+.signup { margin-top: 2rem; display: grid; gap: 0.75rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+.signup label { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }
+.signup input[type='email'], .signup textarea {
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+}
+.signup button {
+  justify-self: start;
+  padding: 0.55rem 1.2rem;
+  font: inherit;
+  color: var(--bg);
+  background: var(--fg);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.signup button:disabled { opacity: 0.5; cursor: default; }
+.form-status { min-height: 1.2em; margin: 0; font-size: 0.9rem; color: var(--muted); }
