@@ -1,10 +1,17 @@
 export default {
   title: 'thalk',
   url: 'https://thalk.chuboyu.space',
-  description: 'thoughts, writing, and works in progress by boyu.',
   author: 'boyu',
   email: 'y@chuboyu.space',
-  lang: 'en',
   // Firebase 2nd-gen function endpoints (asia-east1, project thalk-1c092)
-  apiBase: 'https://asia-east1-thalk-1c092.cloudfunctions.net'
+  apiBase: 'https://asia-east1-thalk-1c092.cloudfunctions.net',
+
+  defaultLang: 'en',
+  // The expected human-authored language set. A group missing one of these
+  // (and not marked `solo: true`) fails scripts/check-i18n.mjs.
+  requiredLangs: ['en', 'zh'],
+  languages: [
+    { code: 'en', label: 'English', htmlLang: 'en', locale: 'en-GB', hreflang: 'en' },
+    { code: 'zh', label: '繁體中文', htmlLang: 'zh-Hant', locale: 'zh-Hant-TW', hreflang: 'zh-Hant' }
+  ]
 };

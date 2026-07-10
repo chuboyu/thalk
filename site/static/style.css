@@ -110,6 +110,27 @@ footer a { color: var(--muted); }
 .sub-nav .sub-form button { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
 .sub-nav .sub-status, .sub-nav .sub-error { font-size: 0.85rem; margin: 0 0 0 0.5rem; }
 
+/* i18n: language selector, per-content strip, provenance banner */
+.langselect { display: flex; gap: 0.9rem; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.85rem; margin-bottom: 2rem; }
+.langselect a { color: var(--muted); text-decoration: none; }
+.langselect a:hover { color: var(--fg); }
+.langselect a[aria-current] { color: var(--fg); font-weight: 600; }
+.langstrip { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin: 0 0 1.75rem; }
+.langstrip a { text-decoration: none; }
+.prov {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 1.75rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: rgba(125, 125, 125, 0.06);
+  color: var(--muted);
+}
+.prov a { color: var(--accent); }
+.prov-stale { color: #c23b3b; }
+
 /* support lead form */
 .signup { margin-top: 2rem; display: grid; gap: 0.75rem; font-family: ui-sans-serif, system-ui, sans-serif; }
 .signup label { display: grid; gap: 0.3rem; font-size: 0.9rem; color: var(--muted); }

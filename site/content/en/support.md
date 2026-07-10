@@ -1,7 +1,10 @@
 ---
+key: support
+lang: en
 title: "support"
 description: "Support thalk — funding options are coming."
 form: support
+provenance: original
 ---
 
 If my writing has been useful to you, thank you — that already means a lot.

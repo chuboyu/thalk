@@ -12,6 +12,9 @@ const opts = {
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Subscriber's newsletter language (stored now; per-language sending is phase 2).
+const ALLOWED_LANGS = new Set(['en', 'zh']);
+const DEFAULT_LANG = 'en';
 
 // Instance-local rate limit; resets on cold start, which is fine at this scale.
 const hits = new Map();
@@ -33,7 +36,7 @@ function accept(req, res) {
     res.status(429).json({ ok: false });
     return null;
   }
-  const { email, note, website } = req.body ?? {};
+  const { email, note, website, lang } = req.body ?? {};
   // Honeypot filled → pretend success, store nothing.
   if (website) {
     res.json({ ok: true });
@@ -43,7 +46,11 @@ function accept(req, res) {
     res.status(400).json({ ok: false, error: 'invalid email' });
     return null;
   }
-  return { email: email.trim().toLowerCase(), note: typeof note === 'string' ? note.slice(0, 2000) : '' };
+  return {
+    email: email.trim().toLowerCase(),
+    note: typeof note === 'string' ? note.slice(0, 2000) : '',
+    lang: ALLOWED_LANGS.has(lang) ? lang : DEFAULT_LANG
+  };
 }
 
 export const subscribe = onRequest(opts, async (req, res) => {
@@ -56,6 +63,7 @@ export const subscribe = onRequest(opts, async (req, res) => {
       email: input.email,
       confirmed: true,
       source: 'site',
+      lang: input.lang,
       createdAt: FieldValue.serverTimestamp()
     });
   }
@@ -69,6 +77,7 @@ export const supportLead = onRequest(opts, async (req, res) => {
   await db.collection('support_leads').add({
     email: input.email,
     note: input.note,
+    lang: input.lang,
     createdAt: FieldValue.serverTimestamp()
   });
   res.json({ ok: true });
