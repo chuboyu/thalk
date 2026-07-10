@@ -269,6 +269,39 @@ ${form}
   });
 }
 
+// ── Newsletter email ────────────────────────────────────────────────────────
+// Plain inline-styled HTML (email clients ignore <style> blocks and external
+// CSS unpredictably) rendered by scripts/send-newsletter.mjs, one per post
+// version. unsubscribeUrl/setLangUrl are per-recipient, built by the script.
+export function newsletterEmail(ctx) {
+  const { t, locale, v, lang, unsubscribeUrl, setLangUrl } = ctx;
+  const L = byCode[lang];
+  return `<!doctype html>
+<html lang="${L.htmlLang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(v.title)}</title>
+</head>
+<body style="font-family: system-ui, sans-serif; max-width: 34rem; margin: 0 auto; padding: 2rem 1rem; line-height: 1.6; color: #222;">
+<p style="margin: 0 0 1.5rem;"><a href="${site.url}/${lang}/" style="color: #222; text-decoration: none; font-weight: 600;">${esc(site.title)}</a></p>
+<h1 style="font-size: 1.4rem; margin: 0 0 .25rem;">${esc(v.title)}</h1>
+<p style="margin: 0 0 1.5rem; color: #666; font-size: .9rem;">
+  <time datetime="${v.date.toISOString().slice(0, 10)}">${fmtDate(v.date, locale)}</time>
+  · <a href="${site.url}${v.path}" style="color: #666;">${esc(t('newsletter.view_online'))}</a>
+</p>
+${v.html}
+<hr style="margin: 2rem 0 1rem; border: none; border-top: 1px solid #ddd;">
+<p style="font-size: .85rem; color: #666;">
+${esc(site.author)} · <a href="mailto:${site.email}" style="color: #666;">${esc(site.email)}</a><br>
+<a href="${unsubscribeUrl}" style="color: #666;">${esc(t('newsletter.unsubscribe'))}</a>
+· <a href="${setLangUrl}" style="color: #666;">${esc(t('newsletter.change_lang'))}</a>
+</p>
+</body>
+</html>
+`;
+}
+
 // Support lead form: separate from the subscribe widget on purpose — different
 // dataset (support_leads) and it carries an optional note. Hidden "website" is a
 // spam honeypot.

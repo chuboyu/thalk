@@ -6,9 +6,13 @@
     "check": "node scripts/check-i18n.mjs",
     "build": "node scripts/check-i18n.mjs && node site/build.mjs",
     "build:drafts": "node site/build.mjs --drafts",
-    "serve": "node site/build.mjs --drafts && python3 -m http.server 4173 -d dist"
+    "serve": "node site/build.mjs --drafts && python3 -m http.server 4173 -d dist",
+    "newsletter": "node scripts/send-newsletter.mjs",
+    "newsletter:dry": "node scripts/send-newsletter.mjs --dry-run"
   },
   "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "google-auth-library": "^10.0.0",
     "gray-matter": "^4.0.3",
     "marked": "^16.0.0"
   }

@@ -3,6 +3,7 @@ export default {
   url: 'https://thalk.chuboyu.space',
   author: 'boyu',
   email: 'y@chuboyu.space',
+  newsletterFrom: 'thalk <news@thalk.chuboyu.space>',
   // Firebase 2nd-gen function endpoints (asia-east1, project thalk-1c092)
   apiBase: 'https://asia-east1-thalk-1c092.cloudfunctions.net',
 

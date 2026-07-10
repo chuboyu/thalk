@@ -180,7 +180,7 @@ Firebase App Hosting was considered and **not used**: it targets server-rendered
 | Phase | Delivers | Requirements covered |
 |---|---|---|
 | **1 — Publish** | `build.mjs` + templates, RSS, deploy workflow, custom domain, About + Support (lead form) pages, subscribe widget on every page, Firebase functions + Firestore | 1, 2 (page + list capture), 3, 4 |
-| **2 — Reach** | Newsletter sending (Resend), unsubscribe, optional double opt-in, subscriber export/backup script | 2 (complete), 5 (mailing list) |
+| **2 — Reach** | Newsletter sending (Resend) + unsubscribe — done, per-language via `syndicate: [email]` front matter and each subscriber's stored `lang`. Subscriber export/backup script — done (phase 1). Double opt-in — not built, still deferred. | 2 (complete), 5 (mailing list) |
 | **3 — Syndicate** | `syndicate` front matter → auto-post to X / Threads / Facebook | 5 (complete) |
 | **4 — Agents** | Agent-drafted, PR-approved platform-specific release copy | 6 |
 

@@ -26,5 +26,8 @@
   "support.email": "email",
   "support.note": "anything you want to say (optional)",
   "support.button": "keep me posted",
-  "support.done": "done — thank you."
+  "support.done": "done — thank you.",
+  "newsletter.view_online": "view online",
+  "newsletter.unsubscribe": "unsubscribe",
+  "newsletter.change_lang": "change language"
 }

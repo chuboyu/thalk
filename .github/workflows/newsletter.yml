@@ -1,0 +1,44 @@
+name: newsletter
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no sends, no state writes)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Write invoker service-account key
+        run: echo "$THALK_INVOKER_KEY" > "${RUNNER_TEMP}/invoker-key.json"
+        env:
+          THALK_INVOKER_KEY: ${{ secrets.THALK_INVOKER_KEY }}
+      - name: Send newsletter
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/send-newsletter.mjs --dry-run
+          else
+            node scripts/send-newsletter.mjs
+          fi
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/invoker-key.json
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          THALK_LINK_SECRET: ${{ secrets.THALK_LINK_SECRET }}
+          THALK_ADMIN_SECRET: ${{ secrets.THALK_ADMIN_SECRET }}
+      - name: Clean up credentials
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/invoker-key.json"
