@@ -3,7 +3,7 @@
 Personal publishing channel at [thalk.chuboyu.space](https://thalk.chuboyu.space).
 
 - **Operator's manual** (serve, build, publish, deploy, newsletter): [docs/manual.md](docs/manual.md)
-- **Design**: [docs/thalk.design.md](docs/thalk.design.md) · **i18n**: [docs/thalk.i18n.md](docs/thalk.i18n.md)
+- **Design**: [docs/thalk.design.md](docs/thalk.design.md)
 
 ## Writing
 

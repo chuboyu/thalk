@@ -1,7 +1,7 @@
 # newsletter/
 
 Send-state for the mailing list, kept in git (not Firestore) so it's durable and
-survives a Firestore wipe. See `docs/thalk.publish.send.revisit.md` for the design.
+survives a Firestore wipe. See `docs/thalk.design.md` §5 for the design.
 
 ## `sent.jsonl`
 

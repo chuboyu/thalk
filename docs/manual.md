@@ -1,8 +1,7 @@
 # thalk — Operator's Manual
 
 Practical, copy-pasteable steps for running thalk day to day. For *why* things
-are shaped this way, see [thalk.design.md](thalk.design.md) and
-[thalk.i18n.md](thalk.i18n.md).
+are shaped this way, see [thalk.design.md](thalk.design.md).
 
 - **Site**: static, built by `site/build.mjs`, hosted on GitHub Pages, auto-deployed on push to `main`.
 - **Backend**: Firebase project `thalk-1c092` (region `asia-east1`) — form endpoints + newsletter, deployed manually.
@@ -76,7 +75,7 @@ description: "One-line summary for lists, RSS, and email."
 draft: false             # true = builds locally, never deploys
 tags: [thinking]
 syndicate: []            # [email] to send this version as a newsletter (see §5)
-provenance: original     # original | machine | reviewed  (see thalk.i18n.md)
+provenance: original     # original | machine | reviewed  (see thalk.design.md §1)
 ---
 ```
 
@@ -167,7 +166,7 @@ Sending is a **two-phase, plan-then-send** flow. A post marked `syndicate:
 [email]` is a *candidate*, not an auto-send. What has (and hasn't) been sent
 lives in a git-committed ledger, `newsletter/sent.jsonl` — not Firestore — so
 losing Firestore state can never cause a re-send. See
-`docs/thalk.publish.send.revisit.md` for the design.
+`docs/thalk.design.md` §5 for the design.
 
 ### What makes a post a candidate
 
@@ -193,9 +192,8 @@ again.
    issue.
 
 Only the repo owner can trigger a send (owner-only actor check + Environment
-approval; see the Authorization section of
-`docs/thalk.publish.send.revisit.md`). De-selecting a post doesn't un-publish
-it — the site already deployed on push.
+approval; see the Authorization notes in `docs/thalk.design.md` §5).
+De-selecting a post doesn't un-publish it — the site already deployed on push.
 
 ### Manual / local
 
