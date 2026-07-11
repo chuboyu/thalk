@@ -3,19 +3,25 @@ name: newsletter
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (no sends, no state writes)'
-        type: boolean
-        default: false
+    # A ledger-only commit must not re-trigger planning (and GITHUB_TOKEN pushes
+    # don't trigger workflows anyway — this is belt-and-suspenders).
+    paths-ignore: ['newsletter/**']
+  issue_comment:
+    types: [created]
 
+# Least privilege: the default token is read-only; jobs widen only what they need.
 permissions:
   contents: read
 
 jobs:
-  send:
+  # ── Plan: on every publish, list posts pending a newsletter send and open a
+  # review issue with a checkbox per post. No email is sent here.
+  plan:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,18 +33,82 @@ jobs:
         run: echo "$THALK_INVOKER_KEY" > "${RUNNER_TEMP}/invoker-key.json"
         env:
           THALK_INVOKER_KEY: ${{ secrets.THALK_INVOKER_KEY }}
-      - name: Send newsletter
-        run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            node scripts/send-newsletter.mjs --dry-run
-          else
-            node scripts/send-newsletter.mjs
-          fi
+      - name: Build plan
+        run: node scripts/newsletter-plan.mjs --out="${RUNNER_TEMP}/plan.json" --issue-body="${RUNNER_TEMP}/issue.md"
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/invoker-key.json
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          THALK_LINK_SECRET: ${{ secrets.THALK_LINK_SECRET }}
           THALK_ADMIN_SECRET: ${{ secrets.THALK_ADMIN_SECRET }}
+      - name: Open plan issue (only if there are candidates)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if grep -q '^- \[' "${RUNNER_TEMP}/issue.md"; then
+            gh label create newsletter-plan --color FBCA04 --description "pending newsletter send" --force
+            gh issue create \
+              --title "Newsletter plan for ${HEAD_SHA:0:7}" \
+              --body-file "${RUNNER_TEMP}/issue.md" \
+              --label newsletter-plan
+          else
+            echo "No pending posts — no issue created."
+          fi
+      - name: Clean up credentials
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/invoker-key.json"
+
+  # ── Send: triggered by an owner commenting /send or /skip on a plan issue.
+  # Gated three ways: owner-only actor check, the newsletter-plan label, and an
+  # Environment with required reviewers (the one-tap mobile approval).
+  send:
+    if: >
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request == null &&
+      contains(github.event.issue.labels.*.name, 'newsletter-plan') &&
+      github.event.comment.author_association == 'OWNER' &&
+      (startsWith(github.event.comment.body, '/send') || startsWith(github.event.comment.body, '/skip'))
+    runs-on: ubuntu-latest
+    environment: newsletter-send
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Write invoker service-account key
+        run: echo "$THALK_INVOKER_KEY" > "${RUNNER_TEMP}/invoker-key.json"
+        env:
+          THALK_INVOKER_KEY: ${{ secrets.THALK_INVOKER_KEY }}
+      - name: Send / skip per the issue checkboxes
+        env:
+          # Untrusted issue/comment text is passed via env and parsed in Node,
+          # never interpolated into a shell.
+          THALK_COMMAND: ${{ startsWith(github.event.comment.body, '/send') && 'send' || 'skip' }}
+          THALK_ISSUE_BODY: ${{ github.event.issue.body }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/invoker-key.json
+          THALK_ADMIN_SECRET: ${{ secrets.THALK_ADMIN_SECRET }}
+          THALK_LINK_SECRET: ${{ secrets.THALK_LINK_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: node scripts/send-newsletter.mjs --from-issue | tee "${RUNNER_TEMP}/send.out"
+      - name: Commit ledger
+        run: |
+          if ! git diff --quiet -- newsletter/sent.jsonl; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add newsletter/sent.jsonl
+            git commit -m "newsletter: record send decisions [skip ci]"
+            git push
+          fi
+      - name: Report on the issue and close it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE" --body-file "${RUNNER_TEMP}/send.out"
+          gh issue close "$ISSUE" --reason completed
       - name: Clean up credentials
         if: always()
         run: rm -f "${RUNNER_TEMP}/invoker-key.json"

@@ -7,8 +7,9 @@
     "build": "node scripts/check-i18n.mjs && node site/build.mjs",
     "build:drafts": "node site/build.mjs --drafts",
     "serve": "node site/build.mjs --drafts && python3 -m http.server 4173 -d dist",
-    "newsletter": "node scripts/send-newsletter.mjs",
-    "newsletter:dry": "node scripts/send-newsletter.mjs --dry-run"
+    "newsletter:plan": "node scripts/newsletter-plan.mjs",
+    "newsletter:send": "node scripts/send-newsletter.mjs",
+    "newsletter:dry": "node scripts/send-newsletter.mjs --dry-run --all"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",

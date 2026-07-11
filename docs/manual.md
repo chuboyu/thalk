@@ -163,45 +163,66 @@ firebase deploy --only firestore --project thalk-1c092    # only if rules/indexe
 
 ## 5. Send a newsletter
 
-A newsletter is sent for any **non-draft post version whose front matter
-`syndicate` array includes `email`**. Each language version emails only the
-subscribers whose stored `lang` matches it.
+Sending is a **two-phase, plan-then-send** flow. A post marked `syndicate:
+[email]` is a *candidate*, not an auto-send. What has (and hasn't) been sent
+lives in a git-committed ledger, `newsletter/sent.jsonl` — not Firestore — so
+losing Firestore state can never cause a re-send. See
+`docs/thalk.publish.send.revisit.md` for the design.
 
-### Automatic (normal path)
+### What makes a post a candidate
 
-Add `email` to `syndicate` and push:
+A non-draft post version is a **candidate** if its front matter has `syndicate:
+[email]` **and** its current body hash has no line in `newsletter/sent.jsonl`
+(any status). So: publishing a new such post makes it a candidate; sending or
+skipping it retires it; editing its body later (new hash) makes it a candidate
+again.
 
-```yaml
-syndicate: [email]
-```
+### Normal path (GitHub, mobile-friendly)
 
-The `.github/workflows/newsletter.yml` action runs on every push to `main`. It
-is **idempotent**: each post version is tracked by a content hash in the
-`newsletter_sends` Firestore collection, so it sends **once** and re-runs are
-no-ops until the body changes. Editing a typo and re-pushing will resend (the
-hash changed) — keep that in mind.
+1. Publish a post with `syndicate: [email]` and push. The **plan** job in
+   `.github/workflows/newsletter.yml` opens a GitHub Issue labelled
+   `newsletter-plan` — "Newsletter plan for `<sha>`" — with a checkbox per
+   candidate and the per-post / total / max-per-subscriber email counts.
+2. On your phone or desktop, **uncheck** any post you want to publish but not
+   email, then comment:
+   - `/send` — email the checked posts, record the unchecked as `skipped`;
+   - `/skip` — record every candidate as `skipped`, send nothing.
+3. The **send** job runs — gated to you (owner-only actor check + the
+   `newsletter-plan` label + an Environment approval) — sends, appends decisions
+   to `newsletter/sent.jsonl`, commits it, comments the result, and closes the
+   issue.
+
+Only the repo owner can trigger a send (owner-only actor check + Environment
+approval; see the Authorization section of
+`docs/thalk.publish.send.revisit.md`). De-selecting a post doesn't un-publish
+it — the site already deployed on push.
 
 ### Manual / local
 
-Requires env vars: `THALK_ADMIN_SECRET`, `THALK_LINK_SECRET`, `RESEND_API_KEY`,
-and `GOOGLE_APPLICATION_CREDENTIALS` pointing at a `thalk-newsletter-invoker`
-service-account key (the script authenticates as that SA to reach the
-IAM-restricted functions).
+Needs `THALK_ADMIN_SECRET`, `THALK_LINK_SECRET`, `RESEND_API_KEY`, and
+`GOOGLE_APPLICATION_CREDENTIALS` pointing at a `thalk-newsletter-invoker`
+service-account key (the scripts authenticate as that SA to reach the
+IAM-restricted `newsletterRecipients`).
 
 ```sh
-npm run newsletter:dry     # show what WOULD send + recipient counts; no sends, no writes
-npm run newsletter         # actually send, then record the send
+npm run newsletter:plan                          # list pending candidates + email counts
+npm run newsletter:dry                           # preview send/skip split, offline, no counts
+node scripts/send-newsletter.mjs --all           # send every pending candidate
+node scripts/send-newsletter.mjs --select=post:<slug>:<lang>,...   # send these, skip the rest
+node scripts/send-newsletter.mjs --skip-all      # record all pending as skipped
 ```
 
-Bypass the already-sent check for a deliberate resend of one version:
+The scripts print **counts only, never addresses**. `send-newsletter.mjs`
+appends to `newsletter/sent.jsonl` but does **not** commit — after a local send,
+`git add newsletter/sent.jsonl && git commit`. Send-from address is
+`news@thalk.chuboyu.space`; change it in `site/config.mjs` (`newsletterFrom`).
 
-```sh
-node scripts/send-newsletter.mjs --force=post:<slug>:<lang>
-```
+### Recovering from Firestore loss (a non-event)
 
-The dry run only ever prints **recipient counts**, never addresses. Sending
-from address is `news@thalk.chuboyu.space` (Resend); change it in
-`site/config.mjs` (`newsletterFrom`).
+If `newsletter_sends` or all of Firestore is lost, the ledger is untouched, so
+the next plan is unchanged — no back-catalogue blast. Restore `subscribers` from
+your backup (§6) and carry on. (There is no `newsletter_sends` collection
+anymore; the ledger replaced it.)
 
 ---
 
@@ -229,6 +250,7 @@ if you want off-Firestore backups.
 | i18n coverage check | `npm run check` |
 | Publish a post | commit + `git push` to `main` |
 | Deploy functions | `firebase deploy --only functions --project thalk-1c092` |
-| Dry-run newsletter | `npm run newsletter:dry` |
-| Send newsletter | `npm run newsletter` (or push with `syndicate: [email]`) |
+| List newsletter candidates | `npm run newsletter:plan` |
+| Preview send/skip split | `npm run newsletter:dry` |
+| Send newsletter | mark a post `syndicate: [email]`, push, then `/send` on the plan issue |
 | Back up subscribers | `node scripts/export-subscribers.mjs > backup.json` |

@@ -1,43 +1,37 @@
-// Send newsletter email for any post version marked `syndicate: [email]` that
-// hasn't been sent yet (tracked by content hash via the newsletterRecipients/
-// newsletterMarkSent Cloud Functions, so re-running is idempotent — this is
-// meant to run on every push).
+// Newsletter send phase. Operates on the current *pending* candidates (post
+// versions with `syndicate: [email]` and no decision yet in newsletter/sent.jsonl)
+// and records a decision for each: `sent` or `skipped`. It appends to the ledger
+// but does NOT git-commit — CI (or you, locally) commits newsletter/sent.jsonl.
 //
-//   node scripts/send-newsletter.mjs [--dry-run] [--force=post:<key>:<lang>]
+//   node scripts/send-newsletter.mjs --all              # send every pending post
+//   node scripts/send-newsletter.mjs --select=post:a:en,post:a:zh   # send these, skip the rest
+//   node scripts/send-newsletter.mjs --skip-all         # record all pending as skipped
+//   node scripts/send-newsletter.mjs --from-issue       # CI: THALK_COMMAND + THALK_ISSUE_BODY
+//   ... plus --dry-run to preview (no sends, no ledger writes)
 //
-// No Firestore credential here on purpose: subscriber data is only reachable
-// through the two admin-authenticated functions (THALK_ADMIN_SECRET), same as
-// unsubscribe/setLanguage are the only path for readers. Those two are also
-// IAM-restricted to the thalk-newsletter-invoker service account (not
-// allUsers) since they can return the whole subscriber list for a language —
-// GOOGLE_APPLICATION_CREDENTIALS must point at that service account's key.
-// Sending also needs RESEND_API_KEY and THALK_LINK_SECRET (both skippable
-// with --dry-run; GOOGLE_APPLICATION_CREDENTIALS and THALK_ADMIN_SECRET are not).
+// Because the send set comes from the git ledger, a Firestore wipe cannot cause a
+// re-send. Needs THALK_ADMIN_SECRET + GOOGLE_APPLICATION_CREDENTIALS (invoker SA),
+// and for real sends RESEND_API_KEY + THALK_LINK_SECRET.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import matter from 'gray-matter';
 import { marked } from 'marked';
-import { GoogleAuth } from 'google-auth-library';
 import site from '../site/config.mjs';
-import { makeT, hashBody } from '../site/util.mjs';
+import { makeT } from '../site/util.mjs';
 import { newsletterEmail } from '../site/templates.mjs';
+import { pendingCandidates, sendId, recipientsFor, appendLedger } from './newsletter-lib.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const contentDir = path.join(root, '..', 'site', 'content');
-
-const dryRun = process.argv.includes('--dry-run');
-const forceArg = process.argv.find((a) => a.startsWith('--force='));
-const force = forceArg ? forceArg.slice('--force='.length) : null;
+const args = process.argv.slice(2);
+const dryRun = args.includes('--dry-run');
+const sendAll = args.includes('--all');
+const skipAll = args.includes('--skip-all');
+const fromIssue = args.includes('--from-issue');
+const selectArg = args.find((a) => a.startsWith('--select='));
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const LINK_SECRET = process.env.THALK_LINK_SECRET;
-const ADMIN_SECRET = process.env.THALK_ADMIN_SECRET;
-if (!ADMIN_SECRET) {
-  console.error('THALK_ADMIN_SECRET is required');
-  process.exit(1);
-}
 if (!dryRun && (!RESEND_API_KEY || !LINK_SECRET)) {
   console.error('RESEND_API_KEY and THALK_LINK_SECRET are required (unless --dry-run)');
   process.exit(1);
@@ -47,18 +41,40 @@ function sign(email) {
   return crypto.createHmac('sha256', LINK_SECRET).update(email).digest('hex').slice(0, 32);
 }
 
-const auth = new GoogleAuth();
-async function callFunction(name, body) {
-  const url = `${site.apiBase}/${name}`;
-  const idClient = await auth.getIdTokenClient(url);
-  // getRequestHeaders() returns a Fetch Headers instance, not a plain object —
-  // spreading it drops every entry, so build a real Headers to add to instead.
-  const headers = new Headers(await idClient.getRequestHeaders(url));
-  headers.set('x-thalk-admin-secret', ADMIN_SECRET);
-  headers.set('Content-Type', 'application/json');
-  const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-  if (!resp.ok) throw new Error(`${name} failed: ${resp.status} ${await resp.text()}`);
-  return resp.json();
+// Extract the set of `post:key:lang` ids that are checked in a plan issue body.
+// Parsing untrusted issue text in JS (never a shell), and only accepting the
+// controlled `post:<key>:<lang>` shape, keeps a crafted comment inert.
+function checkedIdsFromIssue(body) {
+  const ids = new Set();
+  for (const line of (body || '').split('\n')) {
+    const m = /^\s*-\s*\[( |x|X)\]\s.*`(post:[A-Za-z0-9._-]+:[a-z]{2,8})`/.exec(line);
+    if (m && m[1].toLowerCase() === 'x') ids.add(m[2]);
+  }
+  return ids;
+}
+
+// Decide, from the CLI/CI inputs, which pending candidates to send vs skip.
+function resolveSelection(pending) {
+  if (sendAll) return { toSend: pending, toSkip: [] };
+  if (skipAll) return { toSend: [], toSkip: pending };
+  let selected;
+  if (fromIssue) {
+    const command = (process.env.THALK_COMMAND || '').trim();
+    if (command === 'skip') return { toSend: [], toSkip: pending };
+    if (command !== 'send') {
+      console.error(`--from-issue expects THALK_COMMAND=send|skip, got "${command}"`);
+      process.exit(1);
+    }
+    selected = checkedIdsFromIssue(process.env.THALK_ISSUE_BODY);
+  } else if (selectArg) {
+    selected = new Set(selectArg.slice('--select='.length).split(',').map((s) => s.trim()).filter(Boolean));
+  } else {
+    console.error('specify one of --all, --skip-all, --select=<ids>, or --from-issue');
+    process.exit(1);
+  }
+  const toSend = pending.filter((v) => selected.has(sendId(v)));
+  const toSkip = pending.filter((v) => !selected.has(sendId(v)));
+  return { toSend, toSkip };
 }
 
 const messages = Object.fromEntries(
@@ -68,65 +84,44 @@ const messages = Object.fromEntries(
   ])
 );
 
-// Only what sending needs — not build.mjs's loadDir, which is entangled with
-// output-path/registry logic this script doesn't touch.
-function loadPosts(lang) {
-  const dir = path.join(contentDir, lang, 'posts');
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => {
-      const { data, content } = matter(fs.readFileSync(path.join(dir, f), 'utf8'));
-      const key = data.key || f.replace(/\.md$/, '');
-      return {
-        key,
-        lang,
-        title: data.title,
-        date: new Date(data.date),
-        draft: !!data.draft,
-        syndicate: data.syndicate || [],
-        path: `/${lang}/posts/${key}/`,
-        html: marked.parse(content),
-        bodyHash: hashBody(content)
-      };
-    });
+const pending = pendingCandidates();
+if (!pending.length) {
+  console.log('nothing pending — no undecided syndicatable posts.');
+  process.exit(0);
 }
 
-const candidates = site.languages
-  .flatMap((l) => loadPosts(l.code))
-  .filter((v) => !v.draft && v.syndicate.includes('email'));
+const { toSend, toSkip } = resolveSelection(pending);
+console.log(`${dryRun ? '[dry-run] ' : ''}send ${toSend.length}, skip ${toSkip.length} (of ${pending.length} pending)`);
 
-if (!candidates.length) console.log('no post versions marked syndicate: [email]');
+// Cache recipients per language (every post of a language shares the audience).
+const recipientCache = new Map();
+async function recipientsForLang(lang) {
+  if (!recipientCache.has(lang)) recipientCache.set(lang, await recipientsFor(lang));
+  return recipientCache.get(lang);
+}
 
-for (const v of candidates) {
-  const sendId = `post:${v.key}:${v.lang}`;
-  const forced = force === sendId;
+const ledgerEntries = [];
+const now = () => new Date().toISOString();
 
-  const { alreadySent, recipients } = await callFunction('newsletterRecipients', {
-    sendId,
-    bodyHash: v.bodyHash,
-    lang: v.lang,
-    force: forced
-  });
-  if (alreadySent) {
-    console.log(`skip ${sendId} — already sent (unchanged)`);
+for (const v of toSend) {
+  const id = sendId(v);
+  if (dryRun) {
+    console.log(`  [dry-run] send ${id}`);
     continue;
   }
 
-  console.log(`${dryRun ? '[dry-run] ' : ''}${sendId} → ${recipients.length} recipient(s)`);
-  if (dryRun) continue;
-
+  const recipients = await recipientsForLang(v.lang);
   const t = makeT(messages[v.lang]);
   const locale = site.languages.find((l) => l.code === v.lang).locale;
   const otherLang = site.languages.find((l) => l.code !== v.lang).code;
+  const rendered = { ...v, html: marked.parse(v.raw) };
 
   let sent = 0;
   for (const email of recipients) {
     const token = sign(email);
     const unsubscribeUrl = `${site.apiBase}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
     const setLangUrl = `${site.apiBase}/setLanguage?email=${encodeURIComponent(email)}&token=${token}&lang=${otherLang}`;
-    const html = newsletterEmail({ t, locale, v, lang: v.lang, unsubscribeUrl, setLangUrl });
+    const html = newsletterEmail({ t, locale, v: rendered, lang: v.lang, unsubscribeUrl, setLangUrl });
 
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -147,6 +142,25 @@ for (const v of candidates) {
     await new Promise((r) => setTimeout(r, 500)); // conservative pacing under Resend's rate limit
   }
 
-  await callFunction('newsletterMarkSent', { sendId, bodyHash: v.bodyHash, recipientCount: sent });
-  console.log(`sent ${sendId} to ${sent}/${recipients.length} subscriber(s)`);
+  // Record per post right after it completes, so a mid-batch crash can at worst
+  // resend the one post in flight, not the whole run.
+  const entry = { key: v.key, lang: v.lang, hash: v.bodyHash, status: 'sent', at: now(), recipients: sent };
+  appendLedger([entry]);
+  ledgerEntries.push(entry);
+  console.log(`  sent ${id} to ${sent}/${recipients.length} subscriber(s)`);
+}
+
+for (const v of toSkip) {
+  const entry = { key: v.key, lang: v.lang, hash: v.bodyHash, status: 'skipped', at: now() };
+  if (dryRun) {
+    console.log(`  [dry-run] skip ${sendId(v)}`);
+    continue;
+  }
+  appendLedger([entry]);
+  ledgerEntries.push(entry);
+  console.log(`  skipped ${sendId(v)}`);
+}
+
+if (!dryRun && ledgerEntries.length) {
+  console.log(`\nappended ${ledgerEntries.length} decision(s) to newsletter/sent.jsonl — commit it to record them.`);
 }

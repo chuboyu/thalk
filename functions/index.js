@@ -193,38 +193,21 @@ export const setLanguage = onRequest({ ...opts, secrets: [linkSecret] }, async (
   );
 });
 
-// The two endpoints below are the only way scripts/send-newsletter.mjs (run
-// locally or from CI) touches subscriber data — it never gets its own
-// Firestore credential, only this narrow, secret-gated API. Firestore stays
-// reachable exclusively through functions, per firestore.rules.
-
-// { sendId, bodyHash, lang, force? } → { alreadySent, recipients }.
-// recipients is [] when alreadySent is true (unless force skips the check).
+// The only way the newsletter plan/send scripts (run locally or from CI) touch
+// subscriber data — they never get their own Firestore credential, only this
+// narrow, secret-gated + service-account-IAM-gated API. Firestore stays
+// reachable exclusively through functions, per firestore.rules. Send-state now
+// lives in the git ledger (newsletter/sent.jsonl), not Firestore, so this no
+// longer tracks what was sent — it just returns the audience for a language.
+//
+// { lang, countOnly? } → { recipients } (addresses) or { count }.
 export const newsletterRecipients = onRequest({ ...opts, secrets: [adminSecret] }, async (req, res) => {
   if (req.method !== 'POST' || !isAdmin(req)) return res.status(403).json({ ok: false });
-  const { sendId, bodyHash, lang, force } = req.body ?? {};
-  if (typeof sendId !== 'string' || typeof bodyHash !== 'string' || !ALLOWED_LANGS.has(lang)) {
-    return res.status(400).json({ ok: false });
-  }
-  const record = await db.collection('newsletter_sends').doc(sendId).get();
-  const alreadySent = record.exists && record.data().bodyHash === bodyHash;
-  if (alreadySent && !force) return res.json({ ok: true, alreadySent: true, recipients: [] });
+  const { lang, countOnly } = req.body ?? {};
+  if (!ALLOWED_LANGS.has(lang)) return res.status(400).json({ ok: false });
   const snap = await db.collection('subscribers').where('lang', '==', lang).get();
-  const recipients = snap.docs.filter((d) => !d.data().unsubscribed).map((d) => d.id);
-  res.json({ ok: true, alreadySent: false, recipients });
-});
-
-// { sendId, bodyHash, recipientCount } → records that this content version
-// has been sent, so the next run's newsletterRecipients call skips it.
-export const newsletterMarkSent = onRequest({ ...opts, secrets: [adminSecret] }, async (req, res) => {
-  if (req.method !== 'POST' || !isAdmin(req)) return res.status(403).json({ ok: false });
-  const { sendId, bodyHash, recipientCount } = req.body ?? {};
-  if (typeof sendId !== 'string' || typeof bodyHash !== 'string' || typeof recipientCount !== 'number') {
-    return res.status(400).json({ ok: false });
-  }
-  await db
-    .collection('newsletter_sends')
-    .doc(sendId)
-    .set({ bodyHash, recipientCount, sentAt: FieldValue.serverTimestamp() });
-  res.json({ ok: true });
+  const active = snap.docs.filter((d) => !d.data().unsubscribed);
+  // countOnly (plan phase) moves no addresses off the server.
+  if (countOnly) return res.json({ ok: true, count: active.length });
+  res.json({ ok: true, recipients: active.map((d) => d.id) });
 });
