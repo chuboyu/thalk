@@ -27,6 +27,8 @@
   "support.note": "anything you want to say (optional)",
   "support.button": "keep me posted",
   "support.done": "done — thank you.",
+  "authorship.ai_assisted": "AI-assisted",
+  "authorship.ai_generated": "AI-generated",
   "newsletter.view_online": "view online",
   "newsletter.unsubscribe": "unsubscribe",
   "newsletter.change_lang": "change language"

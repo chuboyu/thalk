@@ -172,6 +172,21 @@ function provenanceBanner(t, v) {
   return `<aside class="prov" role="note"><span>${esc(line)}</span>${origin}${report}${stale}</aside>`;
 }
 
+// Chip row: topical tags plus an AI-authorship disclosure chip, colour-set
+// apart. `authorship` is a separate axis from `provenance` (which is about
+// translation-from-a-base): a post with no base is still `original`, but may be
+// AI-assisted or AI-generated, and that's disclosed here.
+function tagRow(t, v) {
+  const chips = [];
+  if (v.authorship === 'ai-generated' || v.authorship === 'ai-assisted') {
+    const label = t(v.authorship === 'ai-generated' ? 'authorship.ai_generated' : 'authorship.ai_assisted');
+    chips.push(`<span class="tag tag-ai">${esc(label)}</span>`);
+  }
+  for (const tag of v.tags || []) chips.push(`<span class="tag">${esc(tag)}</span>`);
+  if (!chips.length) return '';
+  return `<p class="tags">${chips.join('')}</p>`;
+}
+
 // ── Page skeleton ────────────────────────────────────────────────────────────
 export function base(ctx) {
   const { t, lang, path, title, description, content, hreflang = [] } = ctx;
@@ -245,6 +260,7 @@ export function post(ctx) {
 ${provenanceBanner(t, v)}
 <h1>${esc(v.title)}</h1>
 <p class="meta"><time datetime="${v.date.toISOString().slice(0, 10)}">${fmtDate(v.date, locale)}</time></p>
+${tagRow(t, v)}
 ${langStrip(t, siblings, v.lang)}
 ${v.html}
 ${subscribeWidget(t, 'inline')}

@@ -42,7 +42,8 @@ function loadDir(lang, kind, dir) {
         raw: content,
         html: marked.parse(content),
         bodyHash: hashBody(content),
-        provenance: data.provenance || 'original'
+        provenance: data.provenance || 'original',
+        authorship: data.authorship || 'human'
       };
       if (kind === 'post') {
         v.date = new Date(data.date);

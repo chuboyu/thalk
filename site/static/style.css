@@ -4,6 +4,9 @@
   --muted: #6b6b6b;
   --accent: #0b5fff;
   --rule: #e5e5e0;
+  --chip: rgba(125, 125, 125, 0.12);
+  --ai: #8a5a12;
+  --ai-bg: rgba(176, 124, 20, 0.15);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -12,6 +15,9 @@
     --muted: #9a988f;
     --accent: #7aa2ff;
     --rule: #2c2f36;
+    --chip: rgba(150, 150, 150, 0.16);
+    --ai: #e3ba6b;
+    --ai-bg: rgba(227, 186, 107, 0.16);
   }
 }
 * { box-sizing: border-box; }
@@ -117,6 +123,17 @@ footer a { color: var(--muted); }
 .langselect a[aria-current] { color: var(--fg); font-weight: 600; }
 .langstrip { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin: 0 0 1.75rem; }
 .langstrip a { text-decoration: none; }
+/* tag chips (post meta) + AI-authorship disclosure chip */
+.tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 1.75rem; font-family: ui-sans-serif, system-ui, sans-serif; }
+.tag {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--muted);
+}
+.tag-ai { background: var(--ai-bg); color: var(--ai); font-weight: 600; }
 .prov {
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.85rem;

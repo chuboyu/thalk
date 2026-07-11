@@ -27,6 +27,8 @@
   "support.note": "想說的話（選填）",
   "support.button": "通知我",
   "support.done": "完成 — 謝謝你。",
+  "authorship.ai_assisted": "AI 輔助",
+  "authorship.ai_generated": "AI 生成",
   "newsletter.view_online": "線上閱讀",
   "newsletter.unsubscribe": "取消訂閱",
   "newsletter.change_lang": "變更語言"
