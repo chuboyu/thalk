@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
 import site from '../site/config.mjs';
 import { makeT } from '../site/util.mjs';
-import { newsletterEmail } from '../site/templates.mjs';
+import { newsletterEmail, newsletterText } from '../site/templates.mjs';
 import { pendingCandidates, sendId, recipientsFor, appendLedger } from './newsletter-lib.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -121,7 +121,9 @@ for (const v of toSend) {
     const token = sign(email);
     const unsubscribeUrl = `${site.apiBase}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
     const setLangUrl = `${site.apiBase}/setLanguage?email=${encodeURIComponent(email)}&token=${token}&lang=${otherLang}`;
-    const html = newsletterEmail({ t, locale, v: rendered, lang: v.lang, unsubscribeUrl, setLangUrl });
+    const emailCtx = { t, locale, v: rendered, lang: v.lang, unsubscribeUrl, setLangUrl };
+    const html = newsletterEmail(emailCtx);
+    const text = newsletterText(emailCtx);
 
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -129,9 +131,16 @@ for (const v of toSend) {
       body: JSON.stringify({
         from: site.newsletterFrom,
         to: email,
+        reply_to: site.email,
         subject: v.title,
         html,
-        headers: { 'List-Unsubscribe': `<${unsubscribeUrl}>` }
+        text,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          // RFC 8058 one-click unsubscribe — the unsubscribe function reads the
+          // token from the URL query, so the provider's POST works unchanged.
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+        }
       })
     });
     if (!resp.ok) {

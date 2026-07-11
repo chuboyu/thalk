@@ -318,6 +318,25 @@ ${esc(site.author)} · <a href="mailto:${site.email}" style="color: #666;">${esc
 `;
 }
 
+// Plain-text counterpart, sent as the multipart/alternative text part. A text
+// part improves spam scoring and is expected of legitimate bulk mail; it also
+// reads fine in text-only clients. Uses the raw markdown body as-is (markdown is
+// readable as plain text).
+export function newsletterText(ctx) {
+  const { t, v, unsubscribeUrl } = ctx;
+  return [
+    v.title,
+    '',
+    v.raw.trim(),
+    '',
+    '—',
+    `${t('newsletter.view_online')}: ${site.url}${v.path}`,
+    `${t('newsletter.unsubscribe')}: ${unsubscribeUrl}`,
+    `${site.author} · ${site.email}`,
+    ''
+  ].join('\n');
+}
+
 // Support lead form: separate from the subscribe widget on purpose — different
 // dataset (support_leads) and it carries an optional note. Hidden "website" is a
 // spam honeypot.
