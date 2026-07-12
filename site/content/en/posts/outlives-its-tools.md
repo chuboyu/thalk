@@ -4,7 +4,7 @@ lang: en
 title: "a place that outlives its tools"
 description: "The thesis behind thalk — own the medium, and keep it simple enough to hold in your head."
 date: 2026-07-12
-draft: true
+draft: false
 tags: [meta, building, thesis]
 syndicate: []
 provenance: original

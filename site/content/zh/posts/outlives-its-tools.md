@@ -4,7 +4,7 @@ lang: zh
 title: "比工具活得更久的地方"
 description: "thalk 背後的核心主張——擁有自己的媒介，並讓它簡單到能一次握在腦中。"
 date: 2026-07-12
-draft: true
+draft: false
 tags: [meta, building, thesis]
 syndicate: []
 provenance: original
