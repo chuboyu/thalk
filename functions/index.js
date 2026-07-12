@@ -16,9 +16,9 @@ const opts = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Subscriber's newsletter language — set at subscribe time, changeable via the
 // setLanguage link in every newsletter send.
-const ALLOWED_LANGS = new Set(['en', 'zh']);
+const ALLOWED_LANGS = new Set(['en', 'zh', 'ja']);
 const DEFAULT_LANG = 'en';
-const LANG_LABELS = { en: 'English', zh: '繁體中文' };
+const LANG_LABELS = { en: 'English', zh: '繁體中文', ja: '日本語' };
 // Not imported from site/config.mjs: Firebase only bundles the `functions/`
 // source directory, so anything outside it is unavailable at runtime.
 const SITE_URL = 'https://thalk.chuboyu.space';
