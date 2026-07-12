@@ -2,8 +2,8 @@
 key: hello-thalk
 lang: zh
 title: "哈囉，thalk"
-date: 2026-07-08
 description: "這個地方是什麼，以及它為何存在。"
+date: 2026-07-08
 provenance: machine
 base: en
 model: claude-fable-5

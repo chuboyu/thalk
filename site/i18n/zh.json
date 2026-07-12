@@ -8,6 +8,7 @@
   "footer.rss": "rss",
   "content.available_in": "其他語言：",
   "langselect.label": "語言",
+  "list.and": "與",
   "sub.lead": "訂閱，新文章寄到你的信箱",
   "sub.title": "訂閱",
   "sub.button": "訂閱",
@@ -35,5 +36,6 @@
   "newsletter.change_lang": "變更語言",
   "tag.meta": "後設",
   "tag.building": "打造",
-  "tag.tools": "工具"
+  "tag.tools": "工具",
+  "tag.thesis": "主張"
 }

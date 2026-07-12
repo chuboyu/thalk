@@ -2,8 +2,8 @@
 key: small-tools
 lang: en
 title: "small, owned tools"
-date: 2026-07-11
 description: "Why I keep building tiny tools I fully control."
+date: 2026-07-11
 draft: false
 tags: [building, tools]
 syndicate: [email]

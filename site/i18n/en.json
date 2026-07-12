@@ -8,6 +8,7 @@
   "footer.rss": "rss",
   "content.available_in": "also in:",
   "langselect.label": "language",
+  "list.and": "and",
   "sub.lead": "get new posts by email",
   "sub.title": "subscribe",
   "sub.button": "subscribe",
@@ -35,5 +36,6 @@
   "newsletter.change_lang": "change language",
   "tag.meta": "meta",
   "tag.building": "building",
-  "tag.tools": "tools"
+  "tag.tools": "tools",
+  "tag.thesis": "thesis"
 }

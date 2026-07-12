@@ -2,8 +2,8 @@
 key: small-tools
 lang: zh
 title: "小而自持的工具"
-date: 2026-07-11
 description: "為什麼我持續打造完全掌握在自己手裡的小工具。"
+date: 2026-07-11
 draft: false
 tags: [building, tools]
 syndicate: [email]

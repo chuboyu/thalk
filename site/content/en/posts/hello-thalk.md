@@ -2,8 +2,8 @@
 key: hello-thalk
 lang: en
 title: "hello, thalk"
-date: 2026-07-08
 description: "What this place is, and why it exists."
+date: 2026-07-08
 draft: false
 tags: [meta]
 syndicate: []

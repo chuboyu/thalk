@@ -8,6 +8,7 @@
   "footer.rss": "rss",
   "content.available_in": "他の言語：",
   "langselect.label": "言語",
+  "list.and": "と",
   "sub.lead": "新しい記事をメールで受け取る",
   "sub.title": "購読",
   "sub.button": "購読する",
@@ -35,5 +36,6 @@
   "newsletter.change_lang": "言語を変更",
   "tag.meta": "メタ",
   "tag.building": "制作",
-  "tag.tools": "ツール"
+  "tag.tools": "ツール",
+  "tag.thesis": "主張"
 }

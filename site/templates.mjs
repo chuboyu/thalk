@@ -161,7 +161,7 @@ function provenanceBanner(t, v) {
   const key = v.provenance === 'reviewed' ? 'banner.reviewed' : 'banner.machine';
   const date =
     v.translatedAt instanceof Date ? v.translatedAt.toISOString().slice(0, 10) : v.translatedAt || '';
-  const line = t(key, { base: t('lang.' + v.base), model: v.model || 'AI', date });
+  const line = t(key, { base: t('lang.' + v.base), model: joinList(t, v.model) || 'AI', date });
   const origin = byCode[v.base]
     ? ` <a href="/${v.base}/${v.kind === 'post' ? 'posts/' : ''}${v.key}/">${esc(t('banner.read_original'))}</a>`
     : '';
@@ -172,6 +172,15 @@ function provenanceBanner(t, v) {
   return `<aside class="prov" role="note"><span>${esc(line)}</span>${origin}${report}${stale}</aside>`;
 }
 
+// Join a list of names with a localized conjunction: [a] → "a",
+// [a,b] → "a and b", [a,b,c] → "a, b and c".
+function joinList(t, items) {
+  if (!items || !items.length) return '';
+  if (items.length === 1) return items[0];
+  const and = t('list.and');
+  return `${items.slice(0, -1).join(', ')} ${and} ${items[items.length - 1]}`;
+}
+
 // Chip row: topical tags plus an AI-authorship disclosure chip, colour-set
 // apart. `authorship` is a separate axis from `provenance` (which is about
 // translation-from-a-base): a post with no base is still `original`, but may be
@@ -180,7 +189,12 @@ function tagRow(t, v) {
   const chips = [];
   if (v.authorship === 'ai-generated' || v.authorship === 'ai-assisted') {
     const label = t(v.authorship === 'ai-generated' ? 'authorship.ai_generated' : 'authorship.ai_assisted');
-    chips.push(`<span class="tag tag-ai">${esc(label)}</span>`);
+    // Name the model(s) in a tooltip — only for `original`, where `model`
+    // unambiguously means the authorship models (on machine/reviewed versions
+    // `model` is the translator, already shown in the provenance banner).
+    const models = v.provenance === 'original' && v.model && v.model.length ? v.model.join(', ') : '';
+    const title = models ? ` title="${esc(label + ' · ' + models)}"` : '';
+    chips.push(`<span class="tag tag-ai"${title}>${esc(label)}</span>`);
   }
   for (const tag of v.tags || []) {
     // Localized tag label via i18n key `tag.<name>`; falls back to the raw tag

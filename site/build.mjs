@@ -43,7 +43,10 @@ function loadDir(lang, kind, dir) {
         html: marked.parse(content),
         bodyHash: hashBody(content),
         provenance: data.provenance || 'original',
-        authorship: data.authorship || 'human'
+        authorship: data.authorship || 'human',
+        // Model attribution accepts a string or a list; normalize to an array so
+        // one or several models render uniformly.
+        model: data.model == null ? [] : Array.isArray(data.model) ? data.model : [data.model]
       };
       if (kind === 'post') {
         v.date = new Date(data.date);
