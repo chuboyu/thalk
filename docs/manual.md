@@ -57,11 +57,11 @@ step for the site.
 
 ```
 site/content/
-├── en/posts/<slug>.md      # English version
-└── zh/posts/<slug>.md      # 繁體中文 version
+├── en/posts/<YYYY-MM-DD>-<slug>.md   # English version
+└── zh/posts/<YYYY-MM-DD>-<slug>.md   # 繁體中文 version
 ```
 
-Pages (About, Support) are `site/content/<lang>/about.md`, `support.md`.
+Post files are named `<date>-<slug>.md` so the folder lists in release order — the date prefix is purely for sorting and is stripped when deriving the URL; the slug and everything shown on the page come from front-matter `key`. Pages (About, Support) have no date and stay `site/content/<lang>/about.md`, `support.md`.
 
 ### Front matter
 

@@ -18,7 +18,7 @@ function load(lang, kind, dir) {
     .filter((f) => f.endsWith('.md'))
     .map((f) => {
       const { data } = matter(fs.readFileSync(path.join(dir, f), 'utf8'));
-      return { lang, kind, key: data.key || f.replace(/\.md$/, ''), draft: !!data.draft, solo: !!data.solo };
+      return { lang, kind, key: data.key || f.replace(/\.md$/, '').replace(/^\d{4}-\d{2}-\d{2}-/, ''), draft: !!data.draft, solo: !!data.solo };
     });
 }
 
