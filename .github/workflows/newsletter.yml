@@ -73,6 +73,8 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history so the ledger push can rebase-retry
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -95,13 +97,23 @@ jobs:
         run: node scripts/send-newsletter.mjs --from-issue | tee "${RUNNER_TEMP}/send.out"
       - name: Commit ledger
         run: |
-          if ! git diff --quiet -- newsletter/sent.jsonl; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add newsletter/sent.jsonl
-            git commit -m "newsletter: record send decisions [skip ci]"
-            git push
+          if git diff --quiet -- newsletter/sent.jsonl; then
+            echo "ledger unchanged"; exit 0
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add newsletter/sent.jsonl
+          git commit -m "newsletter: record send decisions [skip ci]"
+          # The emails already went out; this record MUST land or those posts
+          # could be offered again. Retry against a moving main so a concurrent
+          # push can't drop it.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            echo "push rejected; rebasing onto origin/main (attempt $attempt)"
+            git fetch origin main && git rebase origin/main
+          done
+          echo "::error::could not record newsletter/sent.jsonl after retries"
+          exit 1
       - name: Report on the issue and close it
         env:
           GH_TOKEN: ${{ github.token }}
