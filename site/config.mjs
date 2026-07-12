@@ -13,6 +13,7 @@ export default {
   requiredLangs: ['en', 'zh'],
   languages: [
     { code: 'en', label: 'English', htmlLang: 'en', locale: 'en-GB', hreflang: 'en' },
-    { code: 'zh', label: '繁體中文', htmlLang: 'zh-Hant', locale: 'zh-Hant-TW', hreflang: 'zh-Hant' }
+    { code: 'zh', label: '繁體中文', htmlLang: 'zh-Hant', locale: 'zh-Hant-TW', hreflang: 'zh-Hant' },
+    { code: 'ja', label: '日本語', htmlLang: 'ja', locale: 'ja-JP', hreflang: 'ja' }
   ]
 };

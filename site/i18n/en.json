@@ -2,6 +2,7 @@
   "site.description": "thoughts, writing, and works in progress by boyu.",
   "lang.en": "English",
   "lang.zh": "Chinese",
+  "lang.ja": "Japanese",
   "nav.about": "about",
   "nav.support": "support",
   "footer.rss": "rss",
@@ -31,5 +32,8 @@
   "authorship.ai_generated": "AI-generated",
   "newsletter.view_online": "view online",
   "newsletter.unsubscribe": "unsubscribe",
-  "newsletter.change_lang": "change language"
+  "newsletter.change_lang": "change language",
+  "tag.meta": "meta",
+  "tag.building": "building",
+  "tag.tools": "tools"
 }

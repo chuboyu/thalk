@@ -185,7 +185,8 @@ ${rootAlts}
   try { pick = localStorage.getItem('thalk.lang'); } catch (e) {}
   if (langs.indexOf(pick) < 0) {
     var n = (navigator.language || '').toLowerCase();
-    pick = n.indexOf('zh') === 0 ? 'zh' : '${site.defaultLang}';
+    pick = '${site.defaultLang}';
+    for (var i = 0; i < langs.length; i++) { if (n.indexOf(langs[i]) === 0) { pick = langs[i]; break; } }
   }
   location.replace('/' + pick + '/');
 })();

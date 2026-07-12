@@ -182,7 +182,13 @@ function tagRow(t, v) {
     const label = t(v.authorship === 'ai-generated' ? 'authorship.ai_generated' : 'authorship.ai_assisted');
     chips.push(`<span class="tag tag-ai">${esc(label)}</span>`);
   }
-  for (const tag of v.tags || []) chips.push(`<span class="tag">${esc(tag)}</span>`);
+  for (const tag of v.tags || []) {
+    // Localized tag label via i18n key `tag.<name>`; falls back to the raw tag
+    // when there's no translation (makeT returns the key unchanged if missing).
+    const key = 'tag.' + tag;
+    const label = t(key);
+    chips.push(`<span class="tag">${esc(label === key ? tag : label)}</span>`);
+  }
   if (!chips.length) return '';
   return `<p class="tags">${chips.join('')}</p>`;
 }
