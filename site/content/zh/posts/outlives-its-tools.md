@@ -6,7 +6,7 @@ description: "thalk 背後的核心主張——擁有自己的媒介，並讓它
 date: 2026-07-12
 draft: false
 tags: [meta, building, thesis]
-syndicate: []
+syndicate: [email]
 provenance: original
 authorship: ai-assisted
 ---

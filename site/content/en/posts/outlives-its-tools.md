@@ -6,7 +6,7 @@ description: "The thesis behind thalk — own the medium, and keep it simple eno
 date: 2026-07-12
 draft: false
 tags: [meta, building, thesis]
-syndicate: []
+syndicate: [email]
 provenance: original
 authorship: ai-assisted
 ---

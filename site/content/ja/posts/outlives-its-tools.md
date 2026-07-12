@@ -6,6 +6,7 @@ description: "thalk の背後にある主張——媒介を自分のものにし
 date: 2026-07-12
 draft: false
 tags: [meta, building, thesis]
+syndicate: [email]
 provenance: machine
 base: en
 model: [claude-fable-5, sakana chat]
