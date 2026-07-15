@@ -132,7 +132,7 @@ for (const v of toSend) {
         from: site.newsletterFrom,
         to: email,
         reply_to: site.email,
-        subject: v.title,
+        subject: `${t('newsletter.subject_prefix')} ${v.title}`,
         html,
         text,
         headers: {

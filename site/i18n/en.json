@@ -34,6 +34,7 @@
   "newsletter.view_online": "view online",
   "newsletter.unsubscribe": "unsubscribe",
   "newsletter.change_lang": "change language",
+  "newsletter.subject_prefix": "[thalk Newsletter]",
   "tag.meta": "meta",
   "tag.building": "building",
   "tag.tools": "tools",

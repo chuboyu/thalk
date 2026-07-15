@@ -34,6 +34,7 @@
   "newsletter.view_online": "オンラインで読む",
   "newsletter.unsubscribe": "配信停止",
   "newsletter.change_lang": "言語を変更",
+  "newsletter.subject_prefix": "[thalk ニュースレター]",
   "tag.meta": "メタ",
   "tag.building": "制作",
   "tag.tools": "ツール",
