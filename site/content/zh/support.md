@@ -4,7 +4,7 @@ lang: zh
 title: "支持"
 description: "支持 thalk — 贊助方式即將推出。"
 form: support
-provenance: machine
+provenance: original
 base: en
 model: claude-fable-5
 translatedAt: 2026-07-10
