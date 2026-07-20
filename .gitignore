@@ -3,3 +3,12 @@ dist/
 .DS_Store
 *.log
 .firebase/
+
+# Credentials must never be committable. CI writes the invoker key to
+# RUNNER_TEMP (outside the repo); these patterns cover the local equivalents.
+.env
+.env.*
+*-key.json
+*service-account*.json
+*serviceaccount*.json
+*.pem

@@ -41,6 +41,13 @@ function sign(email) {
   return crypto.createHmac('sha256', LINK_SECRET).update(email).digest('hex').slice(0, 32);
 }
 
+// Strip anything email-shaped out of text bound for the console. Provider error
+// bodies quote the offending address back at you, and this script's output ends
+// up in a public Actions log and a public issue comment.
+function redact(s) {
+  return String(s).replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[redacted]');
+}
+
 // Extract the set of `post:key:lang` ids that are checked in a plan issue body.
 // Parsing untrusted issue text in JS (never a shell), and only accepting the
 // controlled `post:<key>:<lang>` shape, keeps a crafted comment inert.
@@ -117,7 +124,7 @@ for (const v of toSend) {
   const rendered = { ...v, html: marked.parse(v.raw) };
 
   let sent = 0;
-  for (const email of recipients) {
+  for (const [i, email] of recipients.entries()) {
     const token = sign(email);
     const unsubscribeUrl = `${site.apiBase}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
     const setLangUrl = `${site.apiBase}/setLanguage?email=${encodeURIComponent(email)}&token=${token}&lang=${otherLang}`;
@@ -144,7 +151,10 @@ for (const v of toSend) {
       })
     });
     if (!resp.ok) {
-      console.error(`send failed for ${email}: ${resp.status} ${await resp.text()}`);
+      // Identify the failure by position, never by address: this runs in CI on a
+      // public repo, so anything reaching stdout/stderr is world-readable and
+      // subscriber addresses are not maskable the way registered secrets are.
+      console.error(`send failed for recipient ${i + 1}/${recipients.length}: ${resp.status} ${redact(await resp.text())}`);
       continue;
     }
     sent++;
