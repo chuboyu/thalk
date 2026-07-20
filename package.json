@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/check-i18n.mjs",
+    "new": "node scripts/new-post.mjs",
     "build": "node scripts/check-i18n.mjs && node site/build.mjs",
     "build:drafts": "node site/build.mjs --drafts",
     "serve": "node site/build.mjs --drafts && python3 -m http.server 4173 -d dist",
