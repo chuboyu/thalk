@@ -155,6 +155,11 @@ firebase deploy --only firestore --project thalk-1c092    # only if rules/indexe
   Names in use: `THALK_LINK_SECRET` (per-email unsubscribe/language tokens),
   `THALK_ADMIN_SECRET` (gates the two newsletter functions).
 
+  The newsletter workflow also uses two **GitHub Actions** secrets (repo →
+  Settings → Secrets, not Secret Manager): `RESEND_API_KEY`, and
+  `THALK_OPERATOR_EMAIL` — the address the `/send` confirmation mail is sent to.
+  Keep the operator address out of the tracked config; the repo is public.
+
 - If a deploy half-fails leaving a function in `UNKNOWN`/`FAILED`, delete it
   (`gcloud functions delete <fn> --region asia-east1`) and redeploy clean.
 
@@ -180,16 +185,28 @@ again.
 
 1. Publish a post with `syndicate: [email]` and push. The **plan** job in
    `.github/workflows/newsletter.yml` opens a GitHub Issue labelled
-   `newsletter-plan` — "Newsletter plan for `<sha>`" — with a checkbox per
-   candidate and the per-post / total / max-per-subscriber email counts.
+   `newsletter-plan` — "Newsletter plan for `<sha>`". The repo is public, so the
+   issue body carries **only** the `post:<slug>:<lang>` ids (already public — they
+   are the posts' URL slugs) and the emails-per-subscriber-per-locale figure. No
+   titles, no recipient counts.
 2. On your phone or desktop, **uncheck** any post you want to publish but not
    email, then comment:
    - `/send` — email the checked posts, record the unchecked as `skipped`;
-   - `/skip` — record every candidate as `skipped`, send nothing.
-3. The **send** job runs — gated to you (owner-only actor check + the
-   `newsletter-plan` label + an Environment approval) — sends, appends decisions
-   to `newsletter/sent.jsonl`, commits it, comments the result, and closes the
-   issue.
+   - `/skip` — record every candidate as `skipped`, send nothing (no confirmation
+     mail — nothing is going out).
+3. On `/send`, the **notify** job emails the full plan — titles, per-post
+   recipient counts, totals, per-locale fatigue — to `THALK_OPERATOR_EMAIL`,
+   stamped with a **plan id** (`issue #<n> · <sha>`). Read it.
+4. The **send** job is meanwhile waiting on its Environment approval. Approve it
+   only if the plan id GitHub shows you matches the one in the mail — that is how
+   you confirm you are approving the trigger the mail describes. The send then
+   runs, appends decisions to `newsletter/sent.jsonl`, commits it, comments the
+   result, and closes the issue.
+
+The send job's public log and issue comment carry **only ids** plus the
+per-locale fatigue figure — never absolute recipient counts (those went to your
+inbox in step 3). A failed `notify` (e.g. mail undeliverable) blocks the send, so
+you never approve a trigger you weren't shown.
 
 Only the repo owner can trigger a send (owner-only actor check + Environment
 approval; see the Authorization notes in `docs/thalk.design.md` §5).
