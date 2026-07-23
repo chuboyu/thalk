@@ -72,21 +72,33 @@ if (outPath) {
 }
 
 // ── Issue body (checkbox per post) ────────────────────────────────────────────
-if (bodyPath) fs.writeFileSync(bodyPath, renderIssueBody(rows, totalEmails, maxPerSubscriber));
+// This body is PUBLIC (the repo is public). It carries only the `post:key:lang`
+// ids — which are already public, being the posts' URL slugs — and the
+// emails-per-subscriber-per-locale figure, which is derived from the pending-post
+// count, not the subscriber list. Titles and every absolute recipient count are
+// withheld; the full detail is emailed to the operator when they comment `/send`.
+if (bodyPath) fs.writeFileSync(bodyPath, renderIssueBody(rows));
 
-function renderIssueBody(rows, total, maxPer) {
+function renderIssueBody(rows) {
   if (!rows.length) return 'No posts are pending a newsletter send.\n';
+  const perLang = {};
+  for (const r of rows) perLang[r.lang] = (perLang[r.lang] || 0) + 1;
+  const fatigue = Object.entries(perLang)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([lang, n]) => `${lang} ${n}`)
+    .join(' · ');
   return (
     [
-      'Uncheck any post to **skip** sending it — it stays published on the site. ' +
-        'Comment `/send` to dispatch the checked posts, or `/skip` to record all as skipped and close.',
+      'Uncheck any post to **skip** it — it stays published on the site.',
       '',
-      ...rows.map((r) => {
-        const rc = r.recipientCount == null ? '?' : `${r.recipientCount} recipient(s)`;
-        return `- [x] **${r.title}** — \`${r.lang}\` — ${rc} · \`${r.sendId}\``;
-      }),
+      'Comment `/send` to proceed: that emails the full plan (titles, recipient ' +
+        'counts, totals) to the operator, then waits for the deployment approval. ' +
+        'Approve only if the plan id in that email matches this issue. ' +
+        'Or comment `/skip` to record all as skipped and close.',
       '',
-      `**Total:** ${total == null ? '?' : total} email(s) · most to any single subscriber: ${maxPer}`,
+      ...rows.map((r) => `- [x] \`${r.sendId}\``),
+      '',
+      `Emails per subscriber this run: ${fatigue}`,
       ''
     ].join('\n')
   );

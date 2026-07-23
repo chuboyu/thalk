@@ -20,7 +20,14 @@ import { marked } from 'marked';
 import site from '../site/config.mjs';
 import { makeT } from '../site/util.mjs';
 import { newsletterEmail, newsletterText } from '../site/templates.mjs';
-import { pendingCandidates, sendId, recipientsFor, appendLedger } from './newsletter-lib.mjs';
+import {
+  pendingCandidates,
+  sendId,
+  recipientsFor,
+  appendLedger,
+  redactEmails,
+  checkedIdsFromIssue
+} from './newsletter-lib.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -39,25 +46,6 @@ if (!dryRun && (!RESEND_API_KEY || !LINK_SECRET)) {
 
 function sign(email) {
   return crypto.createHmac('sha256', LINK_SECRET).update(email).digest('hex').slice(0, 32);
-}
-
-// Strip anything email-shaped out of text bound for the console. Provider error
-// bodies quote the offending address back at you, and this script's output ends
-// up in a public Actions log and a public issue comment.
-function redact(s) {
-  return String(s).replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[redacted]');
-}
-
-// Extract the set of `post:key:lang` ids that are checked in a plan issue body.
-// Parsing untrusted issue text in JS (never a shell), and only accepting the
-// controlled `post:<key>:<lang>` shape, keeps a crafted comment inert.
-function checkedIdsFromIssue(body) {
-  const ids = new Set();
-  for (const line of (body || '').split('\n')) {
-    const m = /^\s*-\s*\[( |x|X)\]\s.*`(post:[A-Za-z0-9._-]+:[a-z]{2,8})`/.exec(line);
-    if (m && m[1].toLowerCase() === 'x') ids.add(m[2]);
-  }
-  return ids;
 }
 
 // Decide, from the CLI/CI inputs, which pending candidates to send vs skip.
@@ -154,7 +142,7 @@ for (const v of toSend) {
       // Identify the failure by position, never by address: this runs in CI on a
       // public repo, so anything reaching stdout/stderr is world-readable and
       // subscriber addresses are not maskable the way registered secrets are.
-      console.error(`send failed for recipient ${i + 1}/${recipients.length}: ${resp.status} ${redact(await resp.text())}`);
+      console.error(`send failed for recipient ${i + 1} of ${id}: ${resp.status} ${redactEmails(await resp.text())}`);
       continue;
     }
     sent++;
@@ -166,7 +154,10 @@ for (const v of toSend) {
   const entry = { key: v.key, lang: v.lang, hash: v.bodyHash, status: 'sent', at: now(), recipients: sent };
   appendLedger([entry]);
   ledgerEntries.push(entry);
-  console.log(`  sent ${id} to ${sent}/${recipients.length} subscriber(s)`);
+  // Log the id only — never the absolute subscriber count. This line lands in a
+  // public Actions log and issue comment; the full counts went to the operator
+  // by email at approval time.
+  console.log(`  sent ${id}`);
 }
 
 for (const v of toSkip) {
@@ -180,6 +171,17 @@ for (const v of toSkip) {
   console.log(`  skipped ${sendId(v)}`);
 }
 
+// Emails a subscriber receives this run, per locale — this is derived from the
+// count of sent posts per language, not from the subscriber list, so it is safe
+// to publish and is the one fatigue signal worth keeping in the log.
+const perLangSent = {};
+for (const v of toSend) perLangSent[v.lang] = (perLangSent[v.lang] || 0) + 1;
+const fatigue = Object.entries(perLangSent)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([lang, n]) => `${lang} ${n}`)
+  .join(' · ');
+if (fatigue) console.log(`\nEmails per subscriber this run: ${fatigue}`);
+
 if (!dryRun && ledgerEntries.length) {
-  console.log(`\nappended ${ledgerEntries.length} decision(s) to newsletter/sent.jsonl — commit it to record them.`);
+  console.log(`appended ${ledgerEntries.length} decision(s) to newsletter/sent.jsonl — commit it to record them.`);
 }
